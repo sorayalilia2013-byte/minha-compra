@@ -1,2 +1,570 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>Minha Compra</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f1f5f9;
+      color: #172033;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      padding: 20px;
+      color: white;
+      background: #2563eb;
+    }
+
+    header h1 {
+      margin: 0 0 5px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px #0002;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      color: white;
+      background: #2563eb;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.secundario {
+      background: #64748b;
+    }
+
+    button.perigo {
+      background: #dc2626;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .compra {
+      padding: 14px;
+      margin-top: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .oculto {
+      display: none;
+    }
+
+    .pequeno {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .sucesso {
+      color: #15803d;
+      font-weight: bold;
+    }
+
+    .erro {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Minha Compra</h1>
+    <div id="usuario"></div>
+  </header>
+
+  <main>
+
+    <section id="telaLogin" class="card">
+      <h2>Entrar</h2>
+
+      <label>E-mail</label>
+      <input id="email" type="email" placeholder="seu@email.com">
+
+      <label>Senha</label>
+      <input id="senha" type="password" placeholder="Sua senha">
+
+      <button onclick="entrar()">Entrar</button>
+      <button class="secundario" onclick="criarConta()">Criar conta</button>
+
+      <p id="mensagemLogin" class="pequeno"></p>
+    </section>
+
+    <section id="telaApp" class="oculto">
+
+      <div class="card">
+        <button class="secundario" onclick="sair()">Sair</button>
+
+        <h2>Cadastrar compra</h2>
+
+        <label>Loja</label>
+        <input id="loja" placeholder="Ex.: Mercado Livre">
+
+        <label>Número do pedido</label>
+        <input id="numero_pedido" placeholder="Número do pedido">
+
+        <label>Produto</label>
+        <input id="produto" placeholder="Nome do produto">
+
+        <div class="grid">
+          <div>
+            <label>Data da compra</label>
+            <input id="data_compra" type="date">
+          </div>
+
+          <div>
+            <label>Valor</label>
+            <input id="valor" type="number" step="0.01" placeholder="0,00">
+          </div>
+        </div>
+
+        <label>Status</label>
+        <select id="status">
+          <option>Comprado</option>
+          <option>Nota fiscal emitida</option>
+          <option>Enviado</option>
+          <option>Em trânsito</option>
+          <option>Entregue</option>
+          <option>Devolvido</option>
+          <option>Cancelado</option>
+        </select>
+
+        <label>Transportadora</label>
+        <input id="transportadora" placeholder="Ex.: Correios">
+
+        <label>Código de rastreamento</label>
+        <input id="codigo_rastreio" placeholder="Código de rastreamento">
+
+        <div class="grid">
+          <div>
+            <label>Data de envio</label>
+            <input id="data_envio" type="date">
+          </div>
+
+          <div>
+            <label>Data de entrega</label>
+            <input id="data_entrega" type="date">
+          </div>
+        </div>
+
+        <label>Número da nota fiscal</label>
+        <input id="numero_nota" placeholder="Número da NF">
+
+        <label>Série da nota fiscal</label>
+        <input id="serie_nota" placeholder="Série">
+
+        <label>Chave de acesso da NF-e</label>
+        <input id="chave_acesso" placeholder="Chave com 44 números">
+
+        <label>Data de emissão da nota</label>
+        <input id="data_emissao" type="date">
+
+        <label>CNPJ do vendedor</label>
+        <input id="cnpj_vendedor" placeholder="CNPJ">
+
+        <label>Link da compra</label>
+        <input id="link_compra" type="url" placeholder="https://...">
+
+        <label>Observações</label>
+        <textarea id="observacoes" placeholder="Outras informações"></textarea>
+
+        <button onclick="salvarCompra()">Salvar compra</button>
+
+        <p id="mensagem" class="pequeno"></p>
+      </div>
+
+      <div class="card">
+        <h2>Minhas compras</h2>
+
+        <input
+          id="busca"
+          placeholder="Buscar loja, produto, pedido ou nota"
+          oninput="carregarCompras()"
+        >
+
+        <div id="listaCompras"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL =
+      "COLE_AQUI_A_URL_DO_SUPABASE";
+
+    const SUPABASE_KEY =
+      "COLE_AQUI_A_CHAVE_PUBLICA_DO_SUPABASE";
+
+    const banco = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    let usuarioAtual = null;
+
+    function campo(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function mostrarMensagem(id, texto, erro = false) {
+      const elemento = document.getElementById(id);
+      elemento.textContent = texto;
+      elemento.className = erro ? "erro" : "sucesso";
+    }
+
+    async function iniciar() {
+      const resultado = await banco.auth.getSession();
+
+      usuarioAtual = resultado.data.session
+        ? resultado.data.session.user
+        : null;
+
+      atualizarTela();
+
+      banco.auth.onAuthStateChange(function(evento, sessao) {
+        usuarioAtual = sessao ? sessao.user : null;
+        atualizarTela();
+      });
+    }
+
+    function atualizarTela() {
+      const login = document.getElementById("telaLogin");
+      const app = document.getElementById("telaApp");
+      const usuario = document.getElementById("usuario");
+
+      if (usuarioAtual) {
+        login.classList.add("oculto");
+        app.classList.remove("oculto");
+        usuario.textContent = usuarioAtual.email;
+        carregarCompras();
+      } else {
+        login.classList.remove("oculto");
+        app.classList.add("oculto");
+        usuario.textContent = "";
+      }
+    }
+
+    async function criarConta() {
+      const email = campo("email");
+      const senha = campo("senha");
+
+      if (!email || !senha) {
+        mostrarMensagem(
+          "mensagemLogin",
+          "Informe o e-mail e a senha.",
+          true
+        );
+        return;
+      }
+
+      const resultado = await banco.auth.signUp({
+        email: email,
+        password: senha
+      });
+
+      if (resultado.error) {
+        mostrarMensagem(
+          "mensagemLogin",
+          resultado.error.message,
+          true
+        );
+      } else {
+        mostrarMensagem(
+          "mensagemLogin",
+          "Conta criada. Verifique seu e-mail para confirmar o cadastro."
+        );
+      }
+    }
+
+    async function entrar() {
+      const email = campo("email");
+      const senha = campo("senha");
+
+      if (!email || !senha) {
+        mostrarMensagem(
+          "mensagemLogin",
+          "Informe o e-mail e a senha.",
+          true
+        );
+        return;
+      }
+
+      const resultado = await banco.auth.signInWithPassword({
+        email: email,
+        password: senha
+      });
+
+      if (resultado.error) {
+        mostrarMensagem(
+          "mensagemLogin",
+          resultado.error.message,
+          true
+        );
+      } else {
+        mostrarMensagem(
+          "mensagemLogin",
+          "Login realizado."
+        );
+      }
+    }
+
+    async function sair() {
+      await banco.auth.signOut();
+    }
+
+    async function salvarCompra() {
+      if (!usuarioAtual) {
+        return;
+      }
+
+      const loja = campo("loja");
+      const numeroPedido = campo("numero_pedido");
+      const produto = campo("produto");
+
+      if (!loja || !numeroPedido || !produto) {
+        mostrarMensagem(
+          "mensagem",
+          "Preencha loja, número do pedido e produto.",
+          true
+        );
+        return;
+      }
+
+      const dados = {
+        user_id: usuarioAtual.id,
+        loja: loja,
+        numero_pedido: numeroPedido,
+        produto: produto,
+        data_compra: campo("data_compra") || null,
+        valor: campo("valor") || null,
+        status: campo("status"),
+        transportadora: campo("transportadora"),
+        codigo_rastreio: campo("codigo_rastreio"),
+        data_envio: campo("data_envio") || null,
+        data_entrega: campo("data_entrega") || null,
+        numero_nota: campo("numero_nota"),
+        serie_nota: campo("serie_nota"),
+        chave_acesso: campo("chave_acesso"),
+        data_emissao: campo("data_emissao") || null,
+        cnpj_vendedor: campo("cnpj_vendedor"),
+        link_compra: campo("link_compra"),
+        observacoes: campo("observacoes")
+      };
+
+      const resultado = await banco
+        .from("compras")
+        .insert(dados);
+
+      if (resultado.error) {
+        mostrarMensagem(
+          "mensagem",
+          "Erro ao salvar: " + resultado.error.message,
+          true
+        );
+        return;
+      }
+
+      mostrarMensagem(
+        "mensagem",
+        "Compra salva com sucesso."
+      );
+
+      limparFormulario();
+      carregarCompras();
+    }
+
+    function limparFormulario() {
+      const ids = [
+        "loja",
+        "numero_pedido",
+        "produto",
+        "data_compra",
+        "valor",
+        "transportadora",
+        "codigo_rastreio",
+        "data_envio",
+        "data_entrega",
+        "numero_nota",
+        "serie_nota",
+        "chave_acesso",
+        "data_emissao",
+        "cnpj_vendedor",
+        "link_compra",
+        "observacoes"
+      ];
+
+      ids.forEach(function(id) {
+        document.getElementById(id).value = "";
+      });
+    }
+
+    async function carregarCompras() {
+      if (!usuarioAtual) {
+        return;
+      }
+
+      const resultado = await banco
+        .from("compras")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (resultado.error) {
+        document.getElementById("listaCompras").innerHTML =
+          "<p class='erro'>" +
+          escapar(resultado.error.message) +
+          "</p>";
+        return;
+      }
+
+      const busca = campo("busca").toLowerCase();
+
+      const compras = resultado.data.filter(function(compra) {
+        const texto = JSON.stringify(compra).toLowerCase();
+        return texto.includes(busca);
+      });
+
+      const lista = document.getElementById("listaCompras");
+
+      if (compras.length === 0) {
+        lista.innerHTML = "<p>Nenhuma compra cadastrada.</p>";
+        return;
+      }
+
+      lista.innerHTML = compras.map(function(compra) {
+        const valor = compra.valor
+          ? "R$ " + Number(compra.valor).toFixed(2)
+          : "Não informado";
+
+        return `
+          <div class="compra">
+            <h3>${escapar(compra.produto)}</h3>
+
+            <p>
+              <strong>Loja:</strong>
+              ${escapar(compra.loja)}
+            </p>
+
+            <p>
+              <strong>Pedido:</strong>
+              ${escapar(compra.numero_pedido)}
+            </p>
+
+            <p>
+              <strong>Nota fiscal:</strong>
+              ${escapar(compra.numero_nota || "Não cadastrada")}
+            </p>
+
+            <p>
+              <strong>Rastreamento:</strong>
+              ${escapar(compra.codigo_rastreio || "Não cadastrado")}
+            </p>
+
+            <p>
+              <strong>Status:</strong>
+              ${escapar(compra.status)}
+            </p>
+
+            <p>
+              <strong>Valor:</strong>
+              ${valor}
+            </p>
+
+            <button
+              class="perigo"
+              onclick="excluirCompra('${compra.id}')">
+              Excluir
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function excluirCompra(id) {
+      const confirmar = confirm(
+        "Deseja realmente excluir esta compra?"
+      );
+
+      if (!confirmar) {
+        return;
+      }
+
+      const resultado = await banco
+        .from("compras")
+        .delete()
+        .eq("id", id);
+
+      if (resultado.error) {
+        alert("Erro ao excluir: " + resultado.error.message);
+        return;
+      }
+
+      carregarCompras();
+    }
+
+    function escapar(valor) {
+      return String(valor || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    iniciar();
+  </script>
+
+</body>
+</html>
